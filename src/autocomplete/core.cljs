@@ -57,7 +57,8 @@
   (j/append $content (content))
   (-> (throttled-input)
       suggestions
-      subscribe-suggestions))
+      subscribe-suggestions)
+  (.focus ($ :#search-input)))
 
 (defn ^:export main []
   (initialize))
