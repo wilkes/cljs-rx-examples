@@ -1,8 +1,10 @@
-(ns cljs-rx.observable
-  (:require [jayq.core :refer [$] :as j]))
+(ns cljs-rx.observable)
 
 (defn select [obs f]
   (.select obs f))
+
+(defn select-many [obs f]
+  (.selectMany obs f))
 
 (defn throttle [obs ms]
   (.throttle obs ms))
@@ -26,3 +28,6 @@
 
 (defn delay [obs ms]
   (.delay obs ms))
+
+(defn take-until [obs obs2]
+  (.takeUntil obs obs2))
