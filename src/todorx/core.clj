@@ -1,6 +1,6 @@
-(ns snorty.core
+(ns todorx.core
   (:use [noir.core :only [defpage]]
-        [snorty.pages :only [layout]])
+        [todorx.pages :only [layout]])
   (:require [noir.server :as server]))
 
 (defpage "/" [] (layout))
@@ -12,5 +12,5 @@
 
 (comment
   (do
-    (use 'snorty.core)
+    (use 'todorx.core)
     (run-server)))

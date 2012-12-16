@@ -1,4 +1,4 @@
-(ns snorty.pages
+(ns todorx.pages
   (:use [hiccup.page :only [html5
                             include-css
                             include-js]]
@@ -11,12 +11,12 @@
 (defpartial dev-js []
   (javascript-tag "var CLOSURE_NO_DEPS = true;")
   (include-js "js/cljs/main-debug.js")
-  (javascript-tag "snorty.client.core.main(); snorty.client.core.repl();"))
+  (javascript-tag "todorx.client.core.main();"))
 
 (defpartial prod-js []
   (javascript-tag "var CLOSURE_NO_DEPS = true;")
   (include-js "js/cljs/main.js")
-  (javascript-tag "snorty.client.core.main();"))
+  (javascript-tag "todorx.client.core.main();"))
 
 (defpartial layout [& [content]]
   (html5
