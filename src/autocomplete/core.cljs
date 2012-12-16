@@ -10,6 +10,13 @@
 
 (def $content ($ "#main-content"))
 
+(defn throttled-input []
+  (-> ($ "#search-input")
+      (rxj/keyup)
+      (rx/select #(j/val ($ "#search-input")))
+      (rx/throttle 500)
+      rx/distinct-until-changed))
+
 (defn search-wikipedia [term]
   (rxj/ajax "http://en.wikipedia.org/w/api.php"
             {:data {:action "opensearch"
@@ -48,9 +55,7 @@
 
 (defn initialize []
   (j/append $content (content))
-  (-> ($ "#search-input")
-      (rxj/throttled-input 500)
-      (rx/where #(> (count %) 2))
+  (-> (throttled-input)
       suggestions
       subscribe-suggestions))
 

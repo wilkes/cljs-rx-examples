@@ -4,11 +4,6 @@
 (defn select [obs f]
   (.select obs f))
 
-(defn select-val [obs]
-  (select obs
-          (fn [e]
-            (j/val ($ (.-target e))))))
-
 (defn throttle [obs ms]
   (.throttle obs ms))
 
