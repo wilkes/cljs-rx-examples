@@ -23,3 +23,6 @@
      (.subscribe obs observer-or-on-next on-error))
   ([obs observer-or-on-next on-error on-completed]
      (.subscribe obs observer-or-on-next on-error on-completed)))
+
+(defn delay [obs ms]
+  (.delay obs ms))
