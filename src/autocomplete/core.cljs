@@ -1,4 +1,4 @@
-(ns todorx.client.core
+(ns autocomplete.core
   (:require [cljs-rx.jquery :as rxj]
             [cljs-rx.observable :as rx]
             [crate.core]

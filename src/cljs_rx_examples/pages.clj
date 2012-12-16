@@ -1,4 +1,4 @@
-(ns todorx.pages
+(ns cljs-rx-examples.pages
   (:use [hiccup.page :only [html5
                             include-css
                             include-js]]
@@ -8,20 +8,15 @@
   (:require [noir.session :as session]
             [noir.validation :as vali]))
 
-(defpartial dev-js []
+(defpartial main-js [module js]
   (javascript-tag "var CLOSURE_NO_DEPS = true;")
-  (include-js "js/cljs/main-debug.js")
-  (javascript-tag "todorx.client.core.main();"))
+  (include-js (str "/js/cljs/" js))
+  (javascript-tag (str module ".core.main();")))
 
-(defpartial prod-js []
-  (javascript-tag "var CLOSURE_NO_DEPS = true;")
-  (include-js "js/cljs/main.js")
-  (javascript-tag "todorx.client.core.main();"))
-
-(defpartial layout [& [content]]
+(defpartial layout [mode module]
   (html5
    [:head
-    [:title "RxJS Testing"]
+    [:title (str "RxJS Examples: " module)]
     [:meta {:charset "utf-8"}]
     [:meta {:http-equiv "Content-Type" :content "text/html; charset=UTF-8"}]
     [:meta {:http-equiv "X-UA-Compatible" :content "IE=7;IE=8;IE=edge"}]
@@ -36,18 +31,15 @@
         window.BlobBuilder = function() {}; // define it if it doesn't exist already
         }")
     (include-css "/css/bootstrap.css"
-                 "/css/font-awesome.css"
-                 "/css/bootstrap-responsive.css")]
+                 "/css/font-awesome.css")]
    [:body
-    [:div.wrapper
-     [:div#shell.container-fluid
-      [:div.row-fluid
-       [:div#main-content content]]]]
+    [:div#main-content.container]
     (include-js "/js/jquery-1.8.1.min.js"
                 "/js/bootstrap.min.js"
                 "/js/rx.js"
                 "/js/rx.time.js"
                 "/js/rx.jquery.js")
-    (if (dev-mode?)
-      (dev-js)
-      (prod-js))]))
+    (main-js module
+             (if (= "development" mode)
+               "main-debug.js"
+               "main.js"))]))
