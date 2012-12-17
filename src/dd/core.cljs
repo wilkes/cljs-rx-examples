@@ -23,10 +23,9 @@
         (rx/take-until up))))
 
 (defn mouse-drag [$target]
-  (let [mouseup (rxj/mouseup $target)
+  (let [mouseup (rxj/mouseup ($ js/document))
         mousemove (rxj/mousemove ($ js/document))]
-    (-> $target
-        rxj/mousedown
+    (-> (rxj/mousedown $target)
         (rx/select (calc-offset $target))
         (rx/select-many (track-position mousemove mouseup)))))
 
@@ -36,6 +35,4 @@
 (defn ^:export main []
   (let [$target ($ (drag-target))]
     (j/append ($ "#main-content") $target)
-    (-> $target
-        mouse-drag
-        (rx/subscribe (partial j/css $target)))))
+    (rx/subscribe (mouse-drag $target) (partial j/css $target))))
