@@ -8,8 +8,7 @@
 
 (defn mm-offset [$content]
   (let [$doc ($ js/document)]
-    (-> $doc
-        rxj/mousemove
+    (-> (rxj/mousemove $doc)
         (rx/select
          (fn [value]
            (let [offset (.offset $content)
@@ -20,7 +19,8 @@
              {:offset-x x :offset-y y}))))))
 
 (defpartial letter-span [letter]
-  [:span {:style "position:absolute"} letter])
+  [:span {:style "position:absolute;font-family: \"Lucida Console\", Monaco, monospace;"}
+   letter])
 
 (defn bind-letter [mm-offset $content letter i]
   (let [s ($ (letter-span letter))
@@ -34,6 +34,6 @@
 
 (defn ^:export main []
   (let [$content ($ "#main-content")
-        text "time flies like an arrow"]
+        text "TIME FLIES LIKE AN ARROW"]
     (doseq [i (range 0 (count text))]
       (bind-letter (mm-offset $content) $content (get text i) i))))
