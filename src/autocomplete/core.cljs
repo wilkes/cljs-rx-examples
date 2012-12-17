@@ -15,6 +15,8 @@
       (rxj/keyup)
       (rx/select #(j/val ($ "#search-input")))
       (rx/throttle 500)
+      (rx/where (fn [v]
+                  (> (count v) 2)))
       rx/distinct-until-changed))
 
 (defn search-wikipedia [term]
@@ -47,17 +49,18 @@
                               "<li>Search Completed</li>")))))
 
 (defpartial content []
-  [:div
-   [:h2 "RxJS Examples"]
-   [:label {:for "search-input"} "Search"]
-   [:input#search-input]
-   [:ul#results]])
+  [:div.row
+   [:h2 "Search Wikipedia"]
+   [:input#search-input.input-xlarge]
+   [:ul#results.unstyled]])
 
 (defn initialize []
   (j/append $content (content))
-  (-> (throttled-input)
-      suggestions
-      subscribe-suggestions)
+  (let [input (throttled-input)
+        wiki (suggestions input)]
+    (subscribe-suggestions wiki)
+    (rx/subscribe input log-pr)
+    (rx/subscribe wiki log-pr))
   (.focus ($ :#search-input)))
 
 (defn ^:export main []
