@@ -13,6 +13,25 @@
   (include-js (str "/js/cljs/" js))
   (javascript-tag (str module ".core.main();")))
 
+(defn make-module [name label]
+  {:label label
+   :dev (str "/ex/" name "/development")
+   :prod (str "/ex/" name "/production")})
+
+(def modules [(make-module "autocomplete" "Autocomplete")
+              (make-module "dd" "Drag And Drop")
+              (make-module "fly" "Time Flies")])
+
+(defpartial module-link [m]
+  [:a {:href (:dev m)}  (:label m)])
+
+(defpartial make-nav [module]
+  [:ul.nav
+   (for [m modules]
+     [:li {:class (if (= m module)
+                    "active")}
+      (module-link m)])]
+  )
 (defpartial layout [mode module]
   (html5
    [:head
@@ -32,7 +51,10 @@
         }")
     (include-css "/css/bootstrap.css"
                  "/css/font-awesome.css")]
-   [:body
+   [:body {:style "padding-top: 60px;"}
+    [:div.navbar.navbar-fixed-top
+     [:div.navbar-inner
+      (make-nav module)]]
     [:div#main-content.container]
     (include-js "/js/jquery-1.8.1.min.js"
                 "/js/bootstrap.min.js"
