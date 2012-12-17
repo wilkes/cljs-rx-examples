@@ -6,17 +6,11 @@
             [jayq.util :refer [log]])
   (:use-macros [crate.def-macros :only [defpartial]]))
 
-(def log-pr (comp log pr-str))
-
-(def $content ($ "#main-content"))
-
 (defn throttled-input []
-  (-> ($ "#search-input")
-      (rxj/keyup)
+  (-> (rxj/keyup ($ "#search-input"))
       (rx/select #(j/val ($ "#search-input")))
       (rx/throttle 500)
-      (rx/where (fn [v]
-                  (> (count v) 2)))
+      (rx/where #(> (count %) 2))
       rx/distinct-until-changed))
 
 (defn search-wikipedia [term]
@@ -26,27 +20,24 @@
                     :format :json}
              :dataType :jsonp}))
 
-(defn suggestions [input]
-  (-> input
+(defn suggestions []
+  (-> (throttled-input)
       (rx/select search-wikipedia)
       rx/switch-latest
       (rx/where (fn [{:keys [data]}]
                   (and (:0 data) (:1 data))))))
 
-(defn subscribe-suggestions [sug]
-  (let [$elem ($ "#results")]
-    (rx/subscribe sug
-                  (fn [{:keys [data]}]
-                    (j/empty $elem)
-                    (doseq [t (:1 data)]
-                      (j/append $elem
-                                (str "<li>" t "</li>"))))
-                  (fn [e]
-                    (j/inner $elem
-                             (str "<li>" e "</li>")))
-                  (fn []
-                    (j/append $elem
-                              "<li>Search Completed</li>")))))
+(defpartial li [t] [:li t])
+
+(defn display-response  [$elem]
+  (fn [{:keys [data]}]
+    (j/empty $elem)
+    (doseq [t (:1 data)]
+      (j/append $elem (li t)))))
+
+(defn display-error [$elem]
+  (fn [e]
+    (j/inner $elem (li e))))
 
 (defpartial content []
   [:div.row
@@ -54,14 +45,11 @@
    [:input#search-input.input-xlarge]
    [:ul#results.unstyled]])
 
-(defn initialize []
-  (j/append $content (content))
-  (let [input (throttled-input)
-        wiki (suggestions input)]
-    (subscribe-suggestions wiki)
-    (rx/subscribe input log-pr)
-    (rx/subscribe wiki log-pr))
-  (.focus ($ :#search-input)))
-
 (defn ^:export main []
-  (initialize))
+  (j/append ($ "#main-content")
+            (content))
+  (let [$elem ($ "#results")]
+    (rx/subscribe (suggestions)
+                  (display-response $elem)
+                  (display-error $elem)))
+  (.focus ($ :#search-input)))
