@@ -1,4 +1,4 @@
-(ns paint.core
+(ns cljs-rx-examples.client.paint
   (:require [cljs-rx.jquery :as rxj]
             [cljs-rx.observable :as rx]
             [jayq.core :refer [$] :as j]

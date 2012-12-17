@@ -1,4 +1,4 @@
-(ns autocomplete.core
+(ns cljs-rx-examples.client.autocomplete
   (:require [cljs-rx.jquery :as rxj]
             [cljs-rx.observable :as rx]
             [crate.core]

@@ -1,4 +1,4 @@
-(ns dd.core
+(ns cljs-rx-examples.client.dd
   (:require [cljs-rx.jquery :as rxj]
             [cljs-rx.observable :as rx]
             [crate.core]

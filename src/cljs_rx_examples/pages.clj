@@ -11,7 +11,7 @@
 (defpartial main-js [module js]
   (javascript-tag "var CLOSURE_NO_DEPS = true;")
   (include-js (str "/js/cljs/" js))
-  (javascript-tag (str module ".core.main();")))
+  (javascript-tag (str "cljs_rx_examples.client." module ".main();")))
 
 (defn make-module [name label]
   {:label label

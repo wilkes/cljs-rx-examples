@@ -1,4 +1,4 @@
-(ns fly.core
+(ns cljs-rx-examples.client.fly
   (:require [cljs-rx.jquery :as rxj]
             [cljs-rx.observable :as rx]
             [crate.core]

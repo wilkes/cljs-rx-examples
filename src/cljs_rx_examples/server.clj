@@ -1,8 +1,8 @@
-(ns cljs-rx-examples.core
-  (:use [noir.core :only [defpage]]
-        [noir.response :as response]
-        [cljs-rx-examples.pages :only [layout]])
-  (:require [noir.server :as server]))
+(ns cljs-rx-examples.server
+  (:require [noir.server :as server]
+            [noir.core :refer [defpage]]
+            [noir.response :as response]
+            [cljs-rx-examples.pages :refer [layout]]))
 
 (defpage "/" []
   (response/redirect "/ex/autocomplete/development"))
@@ -17,5 +17,5 @@
 
 (comment
   (do
-    (use 'cljs-rx-examples.core)
+    (use 'cljs-rx-examples.server)
     (run-server)))
