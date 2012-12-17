@@ -21,7 +21,8 @@
 
 (def modules [(make-module "autocomplete" "Autocomplete")
               (make-module "dd" "Drag And Drop")
-              (make-module "fly" "Time Flies")])
+              (make-module "fly" "Time Flies")
+              (make-module "paint" "Paint")])
 
 (defpartial module-link [m]
   [:a {:href (:dev m)}  (:label m)])

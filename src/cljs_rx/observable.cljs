@@ -1,4 +1,5 @@
-(ns cljs-rx.observable)
+(ns cljs-rx.observable
+  (:refer-clojure :exclude [take merge]))
 
 (defn select [obs f]
   (.select obs f))
@@ -31,3 +32,12 @@
 
 (defn take-until [obs obs2]
   (.takeUntil obs obs2))
+
+(defn buffer-with-count [obs x y]
+  (.bufferWithCount obs x y))
+
+(defn take [obs n]
+  (.take obs n))
+
+(defn merge [obs1 obs2]
+  (.merge obs1 obs2))
