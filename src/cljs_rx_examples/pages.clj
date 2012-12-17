@@ -15,6 +15,7 @@
 
 (defn make-module [name label]
   {:label label
+   :name name
    :dev (str "/ex/" name "/development")
    :prod (str "/ex/" name "/production")})
 
@@ -28,10 +29,22 @@
 (defpartial make-nav [module]
   [:ul.nav
    (for [m modules]
-     [:li {:class (if (= m module)
+     [:li {:class (if (= (:name m) module)
                     "active")}
-      (module-link m)])]
-  )
+      (module-link m)])])
+
+(defpartial mode-menu [mode module]
+  (let [dev?  (= mode "development")]
+    [:ul.nav.pull-right
+     [:li {:class (if-not dev? "active")}
+      [:a {:href (str "/ex/" module "/production")
+           :class (if-not dev? "info")}
+       "Production"]]
+     [:li {:class (if dev? "active")}
+      [:a {:href (str "/ex/" module "/development")
+           :class (if dev? "info")}
+       "Development"]]]))
+
 (defpartial layout [mode module]
   (html5
    [:head
@@ -54,7 +67,9 @@
    [:body {:style "padding-top: 60px;"}
     [:div.navbar.navbar-fixed-top
      [:div.navbar-inner
-      (make-nav module)]]
+      [:div.container
+       (make-nav module)
+       (mode-menu mode module)]]]
     [:div#main-content.container]
     (include-js "/js/jquery-1.8.1.min.js"
                 "/js/bootstrap.min.js"
