@@ -43,4 +43,4 @@
   ([settings]
      (let [settings (j/->ajax-settings settings)]
        (-> (.ajaxAsObservable js/jQuery settings)
-           (rx/select (fn [val] (js->clj val :keywordize-keys true)))))))
+           (rx/select #(js->clj % :keywordize-keys true))))))
