@@ -22,7 +22,11 @@
 (def modules [(make-module "autocomplete" "Autocomplete")
               (make-module "dd" "Drag And Drop")
               (make-module "fly" "Time Flies")
-              (make-module "paint" "Paint")])
+              (make-module "paint" "Paint")
+              {:label "todos"
+               :name "todo"
+               :dev "/index.html"
+               :prod "/index.html"}])
 
 (defpartial module-link [m]
   [:a {:href (:dev m)}  (:label m)])
