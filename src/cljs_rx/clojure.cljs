@@ -1,15 +1,6 @@
 (ns cljs-rx.clojure
   (:require [clojure.data :as data]))
 
-#_(defn observable-atom [atm]
-  (let [k (gensym)]
-    (js/Rx.Observable.create
-     (fn [observer]
-       (add-watch atm k
-                  (fn [_ _ _ new-state]
-                    (.onNext observer new-state)))
-       (fn [] (remove-watch atm k))))))
-
 (defn observable-atom [atm]
   (let [k (gensym)
         subject (js/Rx.BehaviorSubject.)]
@@ -18,77 +9,84 @@
                  (.onNext subject new-state)))
     subject))
 
-(declare clone-obs-map)
-
 (defprotocol IObservable
   (subscribe
     [obs observer-or-on-next]
     [obs observer-or-on-next, on-error]
     [obs observer-or-on-next on-error on-completed]))
 
+(defprotocol IObservableWrapper
+  (as-obs [this])
+  (-set-content [this new-content]))
+
 (deftype ObservableMap [meta content subject]
+  IObservableWrapper
+  (as-obs [this] subject)
+  (-set-content [this new-content]
+    (set! (.-content this) new-content)
+    (.onNext subject content)
+    this)
+
+  IPrintWithWriter
+  (-pr-writer [this writer opts]
+    (-write writer "#<ObservableMap: ")
+    (-pr-writer content writer opts)
+    (-write writer ">"))
+
   Object
-  (toString [this]
+  (toString [_]
     (pr-str {:content content
              :subject subject}))
 
   IWithMeta
-  (-with-meta [coll meta]
-    (clone-obs-map meta content subject))
+  (-with-meta [this meta]
+    (set! (.-meta this) meta)
+    this)
 
   IMeta
-  (-meta [coll] meta)
+  (-meta [_] meta)
 
   ICollection
-  (-conj [coll entry]
-    (let [new-value (conj content entry)]
-      (.onNext subject new-value)
-      (clone-obs-map meta new-value subject)))
+  (-conj [this entry]
+    (-set-content this (-conj content entry)))
 
   IEmptyableCollection
-  (-empty [coll]
-    (.onNext subject cljs.core.PersistentArrayMap/EMPTY)
-    (clone-obs-map meta
-                   cljs.core.PersistentArrayMap/EMPTY
-                   subject))
+  (-empty [this]
+    (-set-content this cljs.core.PersistentArrayMap/EMPTY))
 
   IEquiv
-  (-equiv [coll other] (equiv-map content (.-content other)))
+  (-equiv [_ other] (equiv-map content (.-content other)))
 
   IHash
-  (-hash [coll] (hash content))
+  (-hash [_] (-hash content))
 
   ISeqable
-  (-seq [coll] (seq content))
+  (-seq [_] (-seq content))
 
   ICounted
-  (-count [coll] (count content))
+  (-count [_] (-count content))
 
   ILookup
   (-lookup [coll k]
     (-lookup coll k nil))
 
-  (-lookup [coll k not-found]
-    (get content k not-found))
+  (-lookup [_ k not-found]
+    (-lookup content k not-found))
 
   IAssociative
-  (-assoc [coll k v]
-    (let [new-value (assoc content k v)]
-      (.onNext subject new-value)
-      (clone-obs-map meta new-value subject)))
+  (-assoc [this k v]
+    (-set-content this (-assoc content k v)))
 
-  (-contains-key? [coll k]
-    (contains? content k))
+  (-contains-key? [_ k]
+    (-contains-key? content k))
 
   IMap
-  (-dissoc [coll k]
-    (let [new-value (dissoc content k)]
-      (.onNext subject new-value)
-      (clone-obs-map meta new-value subject)))
+  (-dissoc [this k]
+    (-set-content this (-dissoc content k)))
 
   IKVReduce
-  (-kv-reduce [coll f init]
-    (reduce content f init))
+  (-kv-reduce [_ f init]
+    (-kv-reduce content f init))
 
   IFn
   (-invoke [coll k]
@@ -98,17 +96,127 @@
     (-lookup coll k not-found))
 
   IObservable
-  (subscribe [obs observer-or-on-next]
+  (subscribe [_ observer-or-on-next]
     (.subscribe subject observer-or-on-next))
 
-  (subscribe [obs observer-or-on-next, on-error]
+  (subscribe [_ observer-or-on-next, on-error]
     (.subscribe subject observer-or-on-next on-error))
 
-  (subscribe [obs observer-or-on-next on-error on-completed]
+  (subscribe [_ observer-or-on-next on-error on-completed]
     (.subscribe subject observer-or-on-next on-error on-completed)))
-
-(defn- clone-obs-map [meta content subject]
-  (ObservableMap. meta content subject))
 
 (defn observable-map [m]
   (ObservableMap. nil m (js/Rx.BehaviorSubject.)))
+
+(deftype ObservableVector [meta content subject]
+  IObservableWrapper
+  (as-obs [this] subject)
+  (-set-content [this new-content]
+    (set! (.-content this) new-content)
+    (.onNext subject content)
+    this)
+
+  IPrintWithWriter
+  (-pr-writer [this writer opts]
+    (-write writer "#<ObservableVector: ")
+    (-pr-writer content writer opts)
+    (-write writer ">"))
+
+  Object
+  (toString [_]
+    (pr-str {:type ObservableVector
+             :content content
+             :subject subject}))
+
+  IWithMeta
+  (-with-meta [this meta]
+    (set! (.-meta this) meta)
+    this)
+
+  IMeta
+  (-meta [_] meta)
+
+  IStack
+  (-peek [coll]
+    (-peek content))
+  (-pop [this]
+    (-set-content this (-pop content)))
+
+  ICollection
+  (-conj [this entry]
+    (js/console.log "entry:" entry)
+    (-set-content this (-conj content entry)))
+
+  IEmptyableCollection
+  (-empty [this]
+    (-set-content this cljs.core.PersistentVector/EMPTY))
+
+  ISequential
+  IEquiv
+  (-equiv [_ other] (equiv-sequential content (.-content other)))
+
+  IHash
+  (-hash [_] (-hash content))
+
+  ISeqable
+  (-seq [_]
+    (-seq content))
+
+  ICounted
+  (-count [_] (-count content))
+
+  IIndexed
+  (-nth [_ n]
+    (-nth content n))
+  (-nth [_ n not-found]
+    (-nth content n not-found))
+
+  ILookup
+  (-lookup [coll k] (-nth coll k nil))
+  (-lookup [coll k not-found] (-nth coll k not-found))
+
+  IMapEntry
+  (-key [coll]
+    (-nth coll 0))
+  (-val [coll]
+    (-nth coll 1))
+
+  IAssociative
+  (-assoc [this k v]
+    (-set-content this (-assoc content k v)))
+
+  IVector
+  (-assoc-n [coll n val] (-assoc coll n val))
+
+  IReduce
+  (-reduce [_ f]
+    (-reduce content f))
+  (-reduce [_ f start]
+    (-reduce content f start))
+
+  IKVReduce
+  (-kv-reduce [_ f init]
+    (-kv-reduce content f init))
+
+  IFn
+  (-invoke [coll k]
+    (-lookup coll k))
+  (-invoke [coll k not-found]
+    (-lookup coll k not-found))
+
+  IReversible
+  (-rseq [coll]
+    (-rseq content))
+
+  IObservable
+  (subscribe [_ observer-or-on-next]
+    (.subscribe subject observer-or-on-next))
+
+  (subscribe [_ observer-or-on-next, on-error]
+    (.subscribe subject observer-or-on-next on-error))
+
+  (subscribe [_ observer-or-on-next on-error on-completed]
+    (.subscribe subject observer-or-on-next on-error on-completed)))
+
+(defn observable-vector [v]
+  (ObservableVector. nil v (js/Rx.BehaviorSubject.)))

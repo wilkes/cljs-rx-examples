@@ -1,7 +1,7 @@
 (ns cljs-rx-examples.client.todo
   (:require [cljs-rx.jquery :as rxj]
             [cljs-rx.observable :as rx]
-            [cljs-rx.clojure :as rxclj]
+            [cljs-rx.clojure :refer [as-obs] :as rxclj]
             [clojure.data :refer [diff]]
             [crate.core :as crate]
             [jayq.core :refer [$] :as j]
@@ -21,8 +21,7 @@
 (defn mark-completed [todo]
   (assoc todo :completed true))
 
-(def todos (atom []))
-(def todos-obs (rxclj/observable-atom todos))
+(def todos (rxclj/observable-vector []))
 
 (defpartial todo-li []
   [:li
@@ -71,21 +70,22 @@
                      rxj/keyup
                      (rx/where enter?)
                      (rx/select #(j/val $new-todo)))
-        todos-diff (-> todos-obs
+        todos-diff (-> todos as-obs
                        (rx/buffer-with-count 2 1)
                        (rx/select #(diff (first %)
                                          (second %)))
                        (.startWith []))
-        completed-count (-> todos-obs
+        completed-count (-> todos as-obs
                             (rx/select #(count (remove :completed %))))]
+    (rx/subscribe (-> todos as-obs (rx/select identity)) log)
     (rx/subscribe todos-diff changed)
     (rx/subscribe completed-count update-count)
     (rx/subscribe new-todo #(do
-                              (swap! todos conj (make-todo %))
+                              (conj todos (make-todo %))
                               (j/val $new-todo "")))
     (doseq [todo init-todos]
-      (swap! todos conj todo)
-      (rxclj/subscribe todo log-pr)
+      (conj todos todo)
+      (rx/subscribe (as-obs todo) log-pr)
       (let [li (populate-todo-li ($ (todo-li)) todo)]
         (j/append $todo-list li))
       (assoc todo :random (gensym)))))
