@@ -22,6 +22,11 @@
     (f $main)
     (f $footer)))
 
+(defn toggle-li-completed [$li]
+  (fn [completed?]
+     (let [f (if completed? j/add-class j/remove-class)]
+       (f $li "completed"))))
+
 (defpartial todo-li []
   [:li
    [:div.view
@@ -32,21 +37,18 @@
 
 (defn enter? [e] (= ENTER (.-keyCode e)))
 
-(defn populate-todo-li [$todo {:keys [id title completed]}]
-  (j/data $todo :id id)
-  (when completed
-    (j/add-class $todo :completed)
-    (.prop ($ :.toggle $todo) "checked" true))
-  (j/inner ($ "label" $todo) title)
-  (j/val ($ :.edit $todo) title)
-  $todo)
-
 (defn bind-todo [todo $todo]
   (let [toggle-completed (-> ($ :.toggle $todo)
                              rxj/change
                              rxj/select-checked)]
-    (rx/subscribe toggle-completed #(model/mark-completed todo %))
     (j/data $todo :id (:id todo))
+
+    (rx/subscribe toggle-completed
+                  #(model/mark-completed todo %))
+
+    (rx/subscribe (rx/select (as-obs todo) #(:completed %))
+                  (toggle-li-completed $todo))
+
     (j/inner ($ "label" $todo) (:title todo))
     (j/val ($ :.edit $todo) (:title todo))))
 
