@@ -90,7 +90,7 @@
   (-> $clear-completed
       rxj/click))
 
-(defn main []
+(defn ^:export main []
   (rx/subscribe model/total-count toggle-main-and-footer)
   (rx/subscribe model/complete-count update-complete-count)
   (rx/subscribe model/incomplete-count update-items-left)
