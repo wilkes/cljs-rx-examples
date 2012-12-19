@@ -25,4 +25,8 @@
   (-> todos as-obs
       (rx/select #(count (remove :completed %)))))
 
+(def total-count
+  (-> todos as-obs
+      (rx/select count)))
+
 (rx/subscribe incomplete-count log-pr)

@@ -13,7 +13,14 @@
 (def $todo-list ($ :#todo-list))
 (def $new-todo ($ :#new-todo))
 (def $todo-count ($ :#todo-count))
+(def $main ($ :#main))
+(def $footer ($ :#footer))
 (def ENTER 13)
+
+(defn toggle-main-and-footer [n]
+  (let [f (if (pos? n) j/show j/hide)]
+    (f $main)
+    (f $footer)))
 
 (defpartial todo-li []
   [:li
@@ -64,5 +71,6 @@
     (j/val $new-todo "")))
 
 (defn main []
+  (rx/subscribe model/total-count toggle-main-and-footer)
   (rx/subscribe model/incomplete-count update-items-left)
   (rx/subscribe new-todo-obs new-todo))
