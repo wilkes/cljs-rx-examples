@@ -40,7 +40,8 @@
 (defn bind-todo [todo $todo]
   (let [toggle-completed (-> ($ :.toggle $todo)
                              rxj/change
-                             rxj/select-checked)]
+                             rxj/select-checked)
+        destroy-click (-> ($ :.destroy $todo) rxj/click)]
     (j/data $todo :id (:id todo))
 
     (rx/subscribe toggle-completed
@@ -48,6 +49,9 @@
 
     (rx/subscribe (rx/select (as-obs todo) #(:completed %))
                   (toggle-li-completed $todo))
+
+    (rx/subscribe destroy-click #(model/remove-todo todo))
+    (rx/subscribe destroy-click #(j/remove $todo))
 
     (j/inner ($ "label" $todo) (:title todo))
     (j/val ($ :.edit $todo) (:title todo))))

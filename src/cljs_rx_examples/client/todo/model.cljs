@@ -21,6 +21,9 @@
 (defn mark-completed [todo completed?]
   (assoc todo :completed completed?))
 
+(defn remove-todo [todo]
+  (rxclj/-set-content todos (vec (remove #(= % todo) todos))))
+
 (def incomplete-count
   (-> todos as-obs
       (rx/select #(count (remove :completed %)))))
