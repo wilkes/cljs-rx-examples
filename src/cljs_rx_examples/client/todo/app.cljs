@@ -3,6 +3,7 @@
             [cljs-rx.jquery :as rxj]
             [cljs-rx.observable :as rx]
             [cljs-rx.clojure :refer [as-obs] :as rxclj]
+            [clojure.set :as set]
             [crate.core :as crate]
             [jayq.core :refer [$] :as j]
             [jayq.util :refer [log]])
@@ -15,6 +16,7 @@
 (def $todo-count ($ :#todo-count))
 (def $main ($ :#main))
 (def $footer ($ :#footer))
+(def $clear-completed ($ :#clear-completed))
 (def ENTER 13)
 
 (defn toggle-main-and-footer [n]
@@ -27,8 +29,8 @@
      (let [f (if completed? j/add-class j/remove-class)]
        (f $li "completed"))))
 
-(defpartial todo-li []
-  [:li
+(defpartial todo-li [id]
+  [:li {:data-id id}
    [:div.view
     [:input.toggle {:type "checkbox"}]
     [:label]
@@ -42,8 +44,6 @@
                              rxj/change
                              rxj/select-checked)
         destroy-click (-> ($ :.destroy $todo) rxj/click)]
-    (j/data $todo :id (:id todo))
-
     (rx/subscribe toggle-completed
                   #(model/mark-completed todo %))
 
@@ -56,11 +56,20 @@
     (j/inner ($ "label" $todo) (:title todo))
     (j/val ($ :.edit $todo) (:title todo))))
 
-(def new-todo-obs
+(defn make-todo-li [todo]
+  (let [$html ($ (todo-li (:id todo)))]
+    (bind-todo todo $html)
+    (j/append $todo-list $html)))
+
+(def todo-input-entered
   (-> $new-todo
       rxj/keyup
       (rx/where enter?)
       (rx/select #(j/val $new-todo))))
+
+(def clear-completed-click
+  (-> $clear-completed
+      rxj/click))
 
 (defn update-items-left [n]
   (j/inner $todo-count
@@ -69,14 +78,30 @@
                        "items"
                        "item"))))
 
+(defn update-complete-count [n]
+  (j/inner $clear-completed
+           (format "Clear completed (%s)" n)))
+
 (defn new-todo [title]
-  (let [todo (model/new-todo title)
-        $html ($ (todo-li))]
-    (bind-todo todo $html)
-    (j/append $todo-list $html)
-    (j/val $new-todo "")))
+  (model/new-todo title)
+  (j/val $new-todo ""))
+
+(defn update-todo-list [todos]
+  (let [current-ids (set (map :id todos))
+        li-ids (set (map #(j/data ($ %) :id) ($ "li" $todo-list)))
+        added (set/difference current-ids li-ids)
+        removed (set/difference li-ids current-ids)]
+
+    (doseq [delete removed]
+      (j/remove ($ (format "li[data-id=\"%s\"]" delete))))
+
+    (doseq [todo (filter #(some #{(:id %)} added) todos)]
+      (make-todo-li todo))))
 
 (defn main []
   (rx/subscribe model/total-count toggle-main-and-footer)
+  (rx/subscribe model/complete-count update-complete-count)
   (rx/subscribe model/incomplete-count update-items-left)
-  (rx/subscribe new-todo-obs new-todo))
+  (rx/subscribe todo-input-entered new-todo)
+  (rx/subscribe clear-completed-click model/clear-completed)
+  (rx/subscribe (as-obs model/todos) update-todo-list))

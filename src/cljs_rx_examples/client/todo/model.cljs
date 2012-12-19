@@ -24,12 +24,20 @@
 (defn remove-todo [todo]
   (rxclj/-set-content todos (vec (remove #(= % todo) todos))))
 
-(def incomplete-count
-  (-> todos as-obs
-      (rx/select #(count (remove :completed %)))))
+(defn clear-completed []
+  (rxclj/-set-content todos (vec (remove :completed todos))))
 
 (def total-count
   (-> todos as-obs
       (rx/select count)))
 
+(def incomplete-count
+  (-> todos as-obs
+      (rx/select #(count (remove :completed %)))))
+
+(def complete-count
+  (-> todos as-obs
+      (rx/select #(count (filter :completed %)))))
+
+(rx/subscribe complete-count log-pr)
 (rx/subscribe incomplete-count log-pr)
