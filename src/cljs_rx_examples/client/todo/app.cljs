@@ -59,7 +59,6 @@
 (defn new-todo [title]
   (let [todo (model/new-todo title)
         $html ($ (todo-li))]
-    (rxclj/subscribe todo log-pr)
     (bind-todo todo $html)
     (j/append $todo-list $html)
     (j/val $new-todo "")))
