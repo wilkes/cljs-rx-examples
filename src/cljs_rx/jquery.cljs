@@ -44,3 +44,7 @@
      (let [settings (j/->ajax-settings settings)]
        (-> (.ajaxAsObservable js/jQuery settings)
            (rx/select #(js->clj % :keywordize-keys true))))))
+
+
+(defn select-checked [obs]
+  (rx/select obs #(.prop ($ (.-target %)) "checked")))

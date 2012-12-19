@@ -1,5 +1,7 @@
 (ns cljs-rx.clojure
-  (:require [clojure.data :as data]))
+  (:require [cljs-rx.observable :as rx]
+            [clojure.data :as data]
+            [jayq.util :refer [log]]))
 
 (defn observable-atom [atm]
   (let [k (gensym)
@@ -17,12 +19,21 @@
 
 (defprotocol IObservableWrapper
   (as-obs [this])
-  (-set-content [this new-content]))
+  (-set-content [this type new-content]))
+
+(defn- subscribe-parent [parent child]
+  (if (satisfies? IObservableWrapper child)
+    (rx/subscribe (as-obs child)
+                  (fn [x]
+                    (.onNext (as-obs parent) (.-content parent)))))
+  parent)
 
 (deftype ObservableMap [meta content subject]
   IObservableWrapper
+
   (as-obs [this] subject)
-  (-set-content [this new-content]
+
+  (-set-content [this type new-content]
     (set! (.-content this) new-content)
     (.onNext subject content)
     this)
@@ -48,17 +59,18 @@
 
   ICollection
   (-conj [this entry]
-    (-set-content this (-conj content entry)))
+    (-set-content this :add (-conj content entry))
+    (subscribe-parent this entry))
 
   IEmptyableCollection
   (-empty [this]
-    (-set-content this cljs.core.PersistentArrayMap/EMPTY))
+    (-set-content this :remove cljs.core.PersistentArrayMap/EMPTY))
 
   IEquiv
   (-equiv [_ other] (equiv-map content (.-content other)))
 
   IHash
-  (-hash [_] (-hash content))
+  (-hash [this] (goog.getUid this))
 
   ISeqable
   (-seq [_] (-seq content))
@@ -75,14 +87,15 @@
 
   IAssociative
   (-assoc [this k v]
-    (-set-content this (-assoc content k v)))
+    (-set-content this :add (-assoc content k v))
+    (subscribe-parent this v)) ;; not sure about this
 
   (-contains-key? [_ k]
     (-contains-key? content k))
 
   IMap
   (-dissoc [this k]
-    (-set-content this (-dissoc content k)))
+    (-set-content this :remove (-dissoc content k)))
 
   IKVReduce
   (-kv-reduce [_ f init]
@@ -111,7 +124,8 @@
 (deftype ObservableVector [meta content subject]
   IObservableWrapper
   (as-obs [this] subject)
-  (-set-content [this new-content]
+
+  (-set-content [this type new-content]
     (set! (.-content this) new-content)
     (.onNext subject content)
     this)
@@ -140,23 +154,23 @@
   (-peek [coll]
     (-peek content))
   (-pop [this]
-    (-set-content this (-pop content)))
+    (-set-content this :remove (-pop content)))
 
   ICollection
   (-conj [this entry]
-    (js/console.log "entry:" entry)
-    (-set-content this (-conj content entry)))
+    (-set-content this :add (-conj content entry))
+    (subscribe-parent this entry))
 
   IEmptyableCollection
   (-empty [this]
-    (-set-content this cljs.core.PersistentVector/EMPTY))
+    (-set-content this :remove cljs.core.PersistentVector/EMPTY))
 
   ISequential
   IEquiv
   (-equiv [_ other] (equiv-sequential content (.-content other)))
 
   IHash
-  (-hash [_] (-hash content))
+  (-hash [this] (goog.getUid this))
 
   ISeqable
   (-seq [_]
@@ -183,7 +197,8 @@
 
   IAssociative
   (-assoc [this k v]
-    (-set-content this (-assoc content k v)))
+    (-set-content this :add (-assoc content k v))
+    (subscribe-parent this v))
 
   IVector
   (-assoc-n [coll n val] (-assoc coll n val))
