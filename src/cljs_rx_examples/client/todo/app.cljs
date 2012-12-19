@@ -39,6 +39,10 @@
 
 (defn enter? [e] (= ENTER (.-keyCode e)))
 
+(defn new-todo [title]
+  (model/new-todo title)
+  (j/val $new-todo ""))
+
 (defn bind-todo [todo $todo]
   (let [toggle-completed (-> ($ :.toggle $todo)
                              rxj/change
@@ -62,6 +66,20 @@
       (bind-todo todo $html)
       (j/append $todo-list $html))))
 
+(defn remove-todos [todos]
+  (doseq [todo todos]
+    (j/remove ($ (format "li[data-id=\"%s\"]" (:id todo))))))
+
+(defn update-items-left [n]
+  (j/inner $todo-count
+           (format "<strong>%s</strong> %s left"
+                   n (if (or (= 0 n) (> n 1))
+                       "items"
+                       "item"))))
+
+(defn update-complete-count [n]
+  (j/inner $clear-completed (format "Clear completed (%s)" n)))
+
 (def todo-input-entered
   (-> $new-todo
       rxj/keyup
@@ -72,30 +90,12 @@
   (-> $clear-completed
       rxj/click))
 
-(defn update-items-left [n]
-  (j/inner $todo-count
-           (format "<strong>%s</strong> %s left"
-                   n (if (or (= 0 n) (> n 1))
-                       "items"
-                       "item"))))
-
-(defn update-complete-count [n]
-  (j/inner $clear-completed
-           (format "Clear completed (%s)" n)))
-
-(defn new-todo [title]
-  (model/new-todo title)
-  (j/val $new-todo ""))
-
-(defn remove-todos [todos]
-  (doseq [todo todos]
-    (j/remove ($ (format "li[data-id=\"%s\"]" (:id todo))))))
-
 (defn main []
   (rx/subscribe model/total-count toggle-main-and-footer)
   (rx/subscribe model/complete-count update-complete-count)
   (rx/subscribe model/incomplete-count update-items-left)
-  (rx/subscribe todo-input-entered new-todo)
-  (rx/subscribe clear-completed-click model/clear-completed)
   (rx/subscribe model/todo-added add-todos)
-  (rx/subscribe model/todo-removed remove-todos))
+  (rx/subscribe model/todo-removed remove-todos)
+
+  (rx/subscribe todo-input-entered new-todo)
+  (rx/subscribe clear-completed-click model/clear-completed))
