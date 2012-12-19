@@ -20,6 +20,7 @@
 
 (defprotocol IObservableWrapper
   (as-obs [this])
+  (update! [this f])
   (-set-content [this new-content]))
 
 (defn- subscribe-parent [parent child]
@@ -38,6 +39,9 @@
     (set! (.-content this) new-content)
     (.onNext subject content)
     this)
+
+  (update! [this f]
+    (-set-content this (f content)))
 
   IPrintWithWriter
   (-pr-writer [this writer opts]
@@ -130,6 +134,9 @@
     (set! (.-content this) new-content)
     (.onNext subject content)
     this)
+
+  (update! [this f]
+    (-set-content this (f content)))
 
   IPrintWithWriter
   (-pr-writer [this writer opts]

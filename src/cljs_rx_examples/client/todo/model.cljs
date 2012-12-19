@@ -23,10 +23,10 @@
   (assoc todo :completed completed?))
 
 (defn remove-todo [todo]
-  (rxclj/-set-content todos (vec (remove #(= % todo) todos))))
+  (rxclj/update! todos #(vec (remove (partial = todo) %))))
 
 (defn clear-completed []
-  (rxclj/-set-content todos (vec (remove :completed todos))))
+  (rxclj/update! todos #(vec (remove :completed %))))
 
 (def total-count
   (-> todos as-obs
