@@ -2,6 +2,7 @@
   (:require [cljs-rx.observable :as rx]
             [cljs-rx.clojure :refer [as-obs] :as rxclj]
             [clojure.data :refer [diff]]
+            [clojure.set :as set]
             [jayq.util :refer [log]]))
 
 (def log-pr (comp log pr-str))
@@ -39,5 +40,24 @@
   (-> todos as-obs
       (rx/select #(count (filter :completed %)))))
 
-(rx/subscribe complete-count log-pr)
-(rx/subscribe incomplete-count log-pr)
+(def change-obs
+  (-> todos as-obs
+      (rx/buffer-with-count 2 1)
+      (rx/select (fn [buffer]
+                   (let [old (set (first buffer))
+                         new (set (second buffer))]
+                     [(vec (set/difference new old))
+                      (vec (set/difference old new))])))
+      (rx/where (fn [[added removed]]
+                  (not (and (empty? added)
+                            (empty? removed)))))))
+
+(def todo-added
+  (-> change-obs
+      (rx/select first)
+      (rx/where (comp not nil?))))
+
+(def todo-removed
+  (-> change-obs
+      (rx/select second)
+      (rx/where (comp not nil?))))

@@ -56,10 +56,11 @@
     (j/inner ($ "label" $todo) (:title todo))
     (j/val ($ :.edit $todo) (:title todo))))
 
-(defn make-todo-li [todo]
-  (let [$html ($ (todo-li (:id todo)))]
-    (bind-todo todo $html)
-    (j/append $todo-list $html)))
+(defn add-todos [todos]
+  (doseq [todo todos]
+    (let [$html ($ (todo-li (:id todo)))]
+      (bind-todo todo $html)
+      (j/append $todo-list $html))))
 
 (def todo-input-entered
   (-> $new-todo
@@ -86,17 +87,9 @@
   (model/new-todo title)
   (j/val $new-todo ""))
 
-(defn update-todo-list [todos]
-  (let [current-ids (set (map :id todos))
-        li-ids (set (map #(j/data ($ %) :id) ($ "li" $todo-list)))
-        added (set/difference current-ids li-ids)
-        removed (set/difference li-ids current-ids)]
-
-    (doseq [delete removed]
-      (j/remove ($ (format "li[data-id=\"%s\"]" delete))))
-
-    (doseq [todo (filter #(some #{(:id %)} added) todos)]
-      (make-todo-li todo))))
+(defn remove-todos [todos]
+  (doseq [todo todos]
+    (j/remove ($ (format "li[data-id=\"%s\"]" (:id todo))))))
 
 (defn main []
   (rx/subscribe model/total-count toggle-main-and-footer)
@@ -104,4 +97,5 @@
   (rx/subscribe model/incomplete-count update-items-left)
   (rx/subscribe todo-input-entered new-todo)
   (rx/subscribe clear-completed-click model/clear-completed)
-  (rx/subscribe (as-obs model/todos) update-todo-list))
+  (rx/subscribe model/todo-added add-todos)
+  (rx/subscribe model/todo-removed remove-todos))
