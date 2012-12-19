@@ -1,11 +1,12 @@
 (ns cljs-rx.clojure
   (:require [cljs-rx.observable :as rx]
+            [cljs-rx.subject :as subject]
             [clojure.data :as data]
             [jayq.util :refer [log]]))
 
 (defn observable-atom [atm]
   (let [k (gensym)
-        subject (js/Rx.BehaviorSubject.)]
+        subject (subject/behavior)]
     (add-watch atm k
                (fn [_ _ _ new-state]
                  (.onNext subject new-state)))
@@ -119,7 +120,7 @@
     (.subscribe subject observer-or-on-next on-error on-completed)))
 
 (defn observable-map [m]
-  (ObservableMap. nil m (js/Rx.BehaviorSubject.)))
+  (ObservableMap. nil m (subject/behavior)))
 
 (deftype ObservableVector [meta content subject]
   IObservableWrapper
@@ -234,4 +235,4 @@
     (.subscribe subject observer-or-on-next on-error on-completed)))
 
 (defn observable-vector [v]
-  (ObservableVector. nil v (js/Rx.BehaviorSubject.)))
+  (ObservableVector. nil v (subject/behavior)))
