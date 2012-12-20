@@ -23,12 +23,12 @@
     (add! todos todo)
     todo))
 
+(defn mark-completed [todo completed?]
+  (obs-assoc! todo :completed completed?))
+
 (defn toggle-completed [completed?]
   (doseq [todo todos]
     (mark-completed todo completed?)))
-
-(defn mark-completed [todo completed?]
-  (obs-assoc! todo :completed completed?))
 
 (defn edit-title [todo title]
   (obs-assoc! todo :title title))
