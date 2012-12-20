@@ -2,7 +2,7 @@
   (:require [cljs-rx-examples.client.todo.model :as model]
             [cljs-rx.jquery :as rxj]
             [cljs-rx.observable :as rx]
-            [cljs-rx.clojure :refer [observable]]
+            [cljs-rx.clojure :refer [observable] :as rxclj]
             [clojure.set :as set]
             [crate.core :as crate]
             [jayq.core :refer [$] :as j]
@@ -48,10 +48,9 @@
                              rxj/change
                              rxj/select-checked)
         destroy-click (-> ($ :.destroy $todo) rxj/click)]
-    (rx/subscribe toggle-completed
-                  #(model/mark-completed todo %))
+    (rx/subscribe toggle-completed #(model/mark-completed todo %))
 
-    (rx/subscribe (rx/select (observable todo) #(:completed %))
+    (rx/subscribe (rxclj/select-key todo :completed)
                   (toggle-li-completed $todo))
 
     (rx/subscribe destroy-click #(model/remove-todo todo))

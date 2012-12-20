@@ -223,6 +223,9 @@
 (defn obs-dissoc! [obs k]
   (update! obs dissoc k))
 
+(defn select-key [obs k]
+  (rx/select (observable obs) #(get % k)))
+
 (defn changed [obs]
   (-> obs
       (rx/buffer-with-count 2 1)
