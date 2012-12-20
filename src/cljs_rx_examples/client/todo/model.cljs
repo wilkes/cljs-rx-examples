@@ -51,11 +51,12 @@
   (-> todos observable
       (rx/select #(count (filter :completed %)))))
 
-(def change-obs (rxclj/changed (observable todos)))
+(def change-obs (rxclj/diff (observable todos)))
 (def todo-added (rxclj/added change-obs))
 (def todo-removed (rxclj/removed change-obs))
 
 (def all-completed
-  (-> change-obs
+  (-> todos observable
+      rxclj/changed
       (rx/select #(= (count todos)
                      (count (filter :completed todos))))))

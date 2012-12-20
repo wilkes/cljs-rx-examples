@@ -229,12 +229,17 @@
 
 (defn changed [obs]
   (-> obs
+      rx/distinct-until-changed))
+
+(defn diff [obs]
+  (-> obs
       (rx/buffer-with-count 2 1)
       (rx/select (fn [buffer]
                    (let [old (first buffer)
                          new (second buffer)]
                      [(vec (remove #(some #{%} old) new))
-                      (vec (remove #(some #{%} new) old))])))))
+                      (vec (remove #(some #{%} new) old))])))
+      rx/distinct-until-changed))
 
 (defn added [obs]
   (-> obs
