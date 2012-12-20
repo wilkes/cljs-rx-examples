@@ -2,7 +2,7 @@
   (:require [cljs-rx-examples.client.todo.model :as model]
             [cljs-rx.jquery :as rxj]
             [cljs-rx.observable :as rx]
-            [cljs-rx.clojure :refer [as-obs] :as rxclj]
+            [cljs-rx.clojure :refer [observable]]
             [clojure.set :as set]
             [crate.core :as crate]
             [jayq.core :refer [$] :as j]
@@ -51,7 +51,7 @@
     (rx/subscribe toggle-completed
                   #(model/mark-completed todo %))
 
-    (rx/subscribe (rx/select (as-obs todo) #(:completed %))
+    (rx/subscribe (rx/select (observable todo) #(:completed %))
                   (toggle-li-completed $todo))
 
     (rx/subscribe destroy-click #(model/remove-todo todo))
@@ -64,7 +64,8 @@
   (doseq [todo todos]
     (let [$html ($ (todo-li (:id todo)))]
       (bind-todo todo $html)
-      (j/append $todo-list $html))))
+      (j/append $todo-list $html)
+      (log $todo-list))))
 
 (defn remove-todos [todos]
   (doseq [todo todos]
@@ -78,7 +79,11 @@
                        "item"))))
 
 (defn update-complete-count [n]
-  (j/inner $clear-completed (format "Clear completed (%s)" n)))
+  (if (pos? n)
+    (-> $clear-completed
+        (j/inner (format "Clear completed (%s)" n))
+        j/show)
+    (j/hide $clear-completed)))
 
 (def todo-input-entered
   (-> $new-todo

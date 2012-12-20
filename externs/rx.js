@@ -8,6 +8,7 @@ jQuery.prototype.fn.onAsObservable = function(events, selector, data) {};
 Rx.BehaviorSubject = function() {};
 
 Rx.Observable.prototype.subscribe = function() {};
+Rx.Observable.prototype.asObservable = function() {};
 
 Rx.Observable.prototype.select = function(selector) {};
 Rx.Observable.prototype.selectMany = function() {};
@@ -25,3 +26,5 @@ Rx.Observable.prototype.delay = function() {};
 Rx.AnonymousObserver.prototype.onNext = function() {};
 Rx.AnonymousObserver.prototype.onError = function() {};
 Rx.AnonymousObserver.prototype.onCompleted = function() {};
+
+Rx.BehaviorSubject.prototype.asObservable = function() {};

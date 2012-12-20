@@ -2,6 +2,7 @@
   (:require [cljs-rx.observable :as rx]
             [cljs-rx.subject :as subject]
             [clojure.data :as data]
+            [clojure.set :as set]
             [jayq.util :refer [log]]))
 
 (defn observable-atom [atm]
@@ -12,47 +13,38 @@
                  (.onNext subject new-state)))
     subject))
 
-(defprotocol IObservable
-  (subscribe
-    [obs observer-or-on-next]
-    [obs observer-or-on-next on-error]
-    [obs observer-or-on-next on-error on-completed]))
+(defprotocol IBehavior
+  (-remove [this x])
+  (-replace [this x])
+  (-observable [this])
+  (-subject [this]))
 
-(defprotocol IObservableWrapper
-  (as-obs [this])
-  (update! [this f])
-  (-set-content [this new-content]))
-
-(defn- subscribe-parent [parent child]
-  (if (satisfies? IObservableWrapper child)
-    (rx/subscribe (as-obs child)
-                  (fn [x]
-                    (.onNext (as-obs parent) (.-content parent)))))
-  parent)
-
-(deftype ObservableMap [meta content subject]
-  IObservableWrapper
-
-  (as-obs [this] subject)
-
-  (-set-content [this new-content]
-    (set! (.-content this) new-content)
-    (.onNext subject content)
+(deftype ObservableMap [meta v behavior]
+  IBehavior
+  (-replace [this new-v]
+    (set! (.-v this) new-v)
+    (.onNext behavior new-v)
     this)
 
-  (update! [this f]
-    (-set-content this (f content)))
+  (-remove [this x]
+    (-replace this
+              (into {} (remove (partial = x) v))))
+
+  (-observable [this]
+    (.asObservable behavior))
+
+  (-subject [this]
+    behavior)
 
   IPrintWithWriter
   (-pr-writer [this writer opts]
     (-write writer "#<ObservableMap: ")
-    (-pr-writer content writer opts)
+    (-pr-writer v writer opts)
     (-write writer ">"))
 
   Object
-  (toString [_]
-    (pr-str {:content content
-             :subject subject}))
+  (toString [this]
+    (pr-str this))
 
   IWithMeta
   (-with-meta [this meta]
@@ -62,93 +54,69 @@
   IMeta
   (-meta [_] meta)
 
-  ICollection
-  (-conj [this entry]
-    (-set-content this (-conj content entry))
-    (subscribe-parent this entry))
-
   IEmptyableCollection
   (-empty [this]
-    (-set-content this cljs.core.PersistentArrayMap/EMPTY))
+    (-replace this cljs.core.PersistentArrayMap/EMPTY))
 
   IEquiv
-  (-equiv [_ other] (equiv-map content (.-content other)))
+  (-equiv [_ other] (equiv-map v (.-v other)))
 
   IHash
-  (-hash [this] (-hash content))
+  (-hash [this] (-hash v))
 
   ISeqable
-  (-seq [_] (-seq content))
+  (-seq [_] (-seq v))
 
   ICounted
-  (-count [_] (-count content))
+  (-count [_] (-count v))
 
   ILookup
   (-lookup [coll k]
     (-lookup coll k nil))
 
   (-lookup [_ k not-found]
-    (-lookup content k not-found))
-
-  IAssociative
-  (-assoc [this k v]
-    (-set-content this (-assoc content k v))
-    (subscribe-parent this v))
-
-  (-contains-key? [_ k]
-    (-contains-key? content k))
-
-  IMap
-  (-dissoc [this k]
-    (-set-content this (-dissoc content k)))
+    (-lookup v k not-found))
 
   IKVReduce
   (-kv-reduce [_ f init]
-    (-kv-reduce content f init))
+    (-kv-reduce v f init))
 
   IFn
   (-invoke [coll k]
     (-lookup coll k))
 
   (-invoke [coll k not-found]
-    (-lookup coll k not-found))
-
-  IObservable
-  (subscribe [_ observer-or-on-next]
-    (.subscribe subject observer-or-on-next))
-
-  (subscribe [_ observer-or-on-next, on-error]
-    (.subscribe subject observer-or-on-next on-error))
-
-  (subscribe [_ observer-or-on-next on-error on-completed]
-    (.subscribe subject observer-or-on-next on-error on-completed)))
+    (-lookup coll k not-found)))
 
 (defn observable-map [m]
   (ObservableMap. nil m (subject/behavior)))
 
-(deftype ObservableVector [meta content subject]
-  IObservableWrapper
-  (as-obs [this] subject)
-
-  (-set-content [this new-content]
-    (set! (.-content this) new-content)
-    (.onNext subject content)
+(deftype ObservableVector [meta v behavior]
+  IBehavior
+  (-replace [this new-v]
+    (set! (.-v this) new-v)
+    (.onNext behavior new-v)
     this)
 
-  (update! [this f]
-    (-set-content this (f content)))
+  (-remove [this x]
+    (-replace this
+              (into [] (remove (partial = x) v))))
+
+  (-observable [this]
+    (.asObservable behavior))
+
+  (-subject [this]
+    behavior)
 
   IPrintWithWriter
   (-pr-writer [this writer opts]
     (-write writer "#<ObservableVector: ")
-    (-pr-writer content writer opts)
+    (-pr-writer v writer opts)
     (-write writer ">"))
 
   Object
-  (toString [_]
-    (pr-str {:type ObservableVector
-             :content content
-             :subject subject}))
+  (toString [this]
+    (pr-str this))
 
   IWithMeta
   (-with-meta [this meta]
@@ -158,40 +126,29 @@
   IMeta
   (-meta [_] meta)
 
-  IStack
-  (-peek [coll]
-    (-peek content))
-  (-pop [this]
-    (-set-content this (-pop content)))
-
-  ICollection
-  (-conj [this entry]
-    (-set-content this (-conj content entry))
-    (subscribe-parent this entry))
-
   IEmptyableCollection
   (-empty [this]
-    (-set-content this cljs.core.PersistentVector/EMPTY))
+    (-replace this cljs.core.PersistentVector/EMPTY))
 
   ISequential
   IEquiv
-  (-equiv [_ other] (equiv-sequential content (.-content other)))
+  (-equiv [_ other] (equiv-sequential v (.-v other)))
 
   IHash
-  (-hash [this] content)
+  (-hash [this] v)
 
   ISeqable
   (-seq [_]
-    (-seq content))
+    (-seq v))
 
   ICounted
-  (-count [_] (-count content))
+  (-count [_] (-count v))
 
   IIndexed
   (-nth [_ n]
-    (-nth content n))
+    (-nth v n))
   (-nth [_ n not-found]
-    (-nth content n not-found))
+    (-nth v n not-found))
 
   ILookup
   (-lookup [coll k] (-nth coll k nil))
@@ -203,23 +160,15 @@
   (-val [coll]
     (-nth coll 1))
 
-  IAssociative
-  (-assoc [this k v]
-    (-set-content this (-assoc content k v))
-    (subscribe-parent this v))
-
-  IVector
-  (-assoc-n [coll n val] (-assoc coll n val))
-
   IReduce
   (-reduce [_ f]
-    (-reduce content f))
+    (-reduce v f))
   (-reduce [_ f start]
-    (-reduce content f start))
+    (-reduce v f start))
 
   IKVReduce
   (-kv-reduce [_ f init]
-    (-kv-reduce content f init))
+    (-kv-reduce v f init))
 
   IFn
   (-invoke [coll k]
@@ -229,17 +178,69 @@
 
   IReversible
   (-rseq [coll]
-    (-rseq content))
-
-  IObservable
-  (subscribe [_ observer-or-on-next]
-    (.subscribe subject observer-or-on-next))
-
-  (subscribe [_ observer-or-on-next, on-error]
-    (.subscribe subject observer-or-on-next on-error))
-
-  (subscribe [_ observer-or-on-next on-error on-completed]
-    (.subscribe subject observer-or-on-next on-error on-completed)))
+    (-rseq v)))
 
 (defn observable-vector [v]
   (ObservableVector. nil v (subject/behavior)))
+
+(defn observable [obs]
+  (-observable obs))
+
+(defn subject [obs]
+  (-subject obs))
+
+(defn- subscribe-parent [parent child]
+  (if (and (satisfies? IBehavior parent)
+           (satisfies? IBehavior child))
+    (rx/subscribe (observable child)
+                  (fn [x]
+                    (.onNext (subject parent) (.-v parent)))))
+  parent)
+
+(defn update!
+  ([obs f]
+     (-replace obs (f (.-v obs))))
+  ([obs f x]
+     (-replace obs (f (.-v obs) x)))
+  ([obs f x y]
+     (-replace obs (f (.-v obs) x y)))
+  ([obs f x y z]
+     (-replace obs (f (.-v obs) x y z)))
+  ([obs f x y z & more]
+     (-replace obs (apply f (.-v obs) x y z more))))
+
+(defn add! [obs x]
+  (update! obs conj x)
+  (subscribe-parent obs x))
+
+(defn remove! [obs x]
+  (-remove obs x))
+
+(defn obs-assoc! [obs k v]
+  (update! obs assoc k v)
+  (subscribe-parent obs v))
+
+(defn obs-dissoc! [obs k]
+  (update! obs dissoc k))
+
+(defn changed [obs]
+  (-> obs
+      (rx/buffer-with-count 2 1)
+      (rx/select (fn [buffer]
+                   (let [old (first buffer)
+                         new (second buffer)]
+                     [(vec (remove #(some #{%} old) new))
+                      (vec (remove #(some #{%} new) old))])))
+      (rx/where (fn [[added removed]]
+                  (not (and (empty? added)
+                            (empty? removed)))))))
+
+(defn added [obs]
+  (-> obs
+      (rx/select first)
+      (rx/where (comp not empty?))))
+
+(defn removed [obs]
+  (-> obs
+      (rx/select second)
+      (rx/where (comp not empty?))))

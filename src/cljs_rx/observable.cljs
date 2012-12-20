@@ -22,7 +22,7 @@
 (defn subscribe
   ([obs observer-or-on-next]
      (.subscribe obs observer-or-on-next))
-  ([obs observer-or-on-next, on-error]
+  ([obs observer-or-on-next on-error]
      (.subscribe obs observer-or-on-next on-error))
   ([obs observer-or-on-next on-error on-completed]
      (.subscribe obs observer-or-on-next on-error on-completed)))

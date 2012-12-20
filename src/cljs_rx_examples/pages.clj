@@ -80,6 +80,7 @@
                 "/js/bootstrap.min.js"
                 "/js/rx.js"
                 "/js/rx.time.js"
+                "/js/rx.binding.js"
                 "/js/rx.jquery.js")
     (main-js module
              (if (= "development" mode)
