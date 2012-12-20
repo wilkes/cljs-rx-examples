@@ -26,6 +26,9 @@
 (defn mark-completed [todo completed?]
   (obs-assoc! todo :completed completed?))
 
+(defn edit-title [todo title]
+  (obs-assoc! todo :title title))
+
 (defn remove-todo [todo]
   (update! todos #(vec (remove (partial = todo) %))))
 

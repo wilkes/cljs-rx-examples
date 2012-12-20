@@ -19,6 +19,14 @@
 (def $clear-completed ($ :#clear-completed))
 (def ENTER 13)
 
+(defn enter? [e] (= ENTER (.-keyCode e)))
+
+(defn input-entered [$input]
+  (-> $input
+      rxj/keyup
+      (rx/where enter?)
+      (rx/select #(j/val $input))))
+
 (defn toggle-main-and-footer [n]
   (let [f (if (pos? n) j/show j/hide)]
     (f $main)
@@ -37,8 +45,6 @@
     [:button.destroy]]
    [:input.edit]])
 
-(defn enter? [e] (= ENTER (.-keyCode e)))
-
 (defn new-todo [title]
   (model/new-todo title)
   (j/val $new-todo ""))
@@ -47,17 +53,32 @@
   (let [toggle-completed (-> ($ :.toggle $todo)
                              rxj/change
                              rxj/select-checked)
-        destroy-click (-> ($ :.destroy $todo) rxj/click)]
+        destroy-click (-> ($ :.destroy $todo) rxj/click)
+        edit-click (-> ($ "label" $todo) rxj/dblclick)
+        edit-return (input-entered ($ :.edit $todo))
+        completed-obs (rxclj/select-key todo :completed)
+        title-obs (rxclj/select-key todo :title)]
     (rx/subscribe toggle-completed #(model/mark-completed todo %))
 
-    (rx/subscribe (rxclj/select-key todo :completed)
+    (rx/subscribe completed-obs
                   (toggle-li-completed $todo))
 
     (rx/subscribe destroy-click #(model/remove-todo todo))
     (rx/subscribe destroy-click #(j/remove $todo))
 
-    (j/inner ($ "label" $todo) (:title todo))
-    (j/val ($ :.edit $todo) (:title todo))))
+    (rx/subscribe title-obs  #(j/inner ($ "label" $todo) %))
+
+    (rx/subscribe title-obs #(j/val ($ :.edit $todo) (:title todo)))
+
+    (rx/subscribe edit-click #(do
+                                (j/add-class $todo "editing")
+                                (.focus ($ :.edit $todo))))
+
+    (rx/subscribe edit-return #(model/edit-title todo %))
+    (rx/subscribe edit-return #(j/remove-class $todo "editing"))
+
+
+    (-> todo rxclj/subject (.onNext todo))))
 
 (defn add-todos [todos]
   (doseq [todo todos]
@@ -83,11 +104,7 @@
         j/show)
     (j/hide $clear-completed)))
 
-(def todo-input-entered
-  (-> $new-todo
-      rxj/keyup
-      (rx/where enter?)
-      (rx/select #(j/val $new-todo))))
+(def todo-input-entered (input-entered $new-todo))
 
 (def clear-completed-click
   (-> $clear-completed
