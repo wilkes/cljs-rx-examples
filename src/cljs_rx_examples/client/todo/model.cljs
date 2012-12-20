@@ -47,7 +47,3 @@
 (def change-obs (rxclj/changed (observable todos)))
 (def todo-added (rxclj/added change-obs))
 (def todo-removed (rxclj/removed change-obs))
-
-(rx/subscribe change-obs log-pr)
-(rx/subscribe total-count log-pr)
-;(rx/subscribe todo-removed log-pr)

@@ -64,8 +64,7 @@
   (doseq [todo todos]
     (let [$html ($ (todo-li (:id todo)))]
       (bind-todo todo $html)
-      (j/append $todo-list $html)
-      (log $todo-list))))
+      (j/append $todo-list $html))))
 
 (defn remove-todos [todos]
   (doseq [todo todos]
