@@ -14,6 +14,7 @@
 (def $todo-list ($ :#todo-list))
 (def $new-todo ($ :#new-todo))
 (def $todo-count ($ :#todo-count))
+(def $toggle-all ($ :#toggle-all))
 (def $main ($ :#main))
 (def $footer ($ :#footer))
 (def $clear-completed ($ :#clear-completed))
@@ -35,7 +36,8 @@
 (defn toggle-li-completed [$li]
   (fn [completed?]
      (let [f (if completed? j/add-class j/remove-class)]
-       (f $li "completed"))))
+       (f $li "completed")
+       (j/attr ($ :.toggle $li) :checked completed?))))
 
 (defpartial todo-li [id]
   [:li {:data-id id}
@@ -58,10 +60,10 @@
         edit-return (input-entered ($ :.edit $todo))
         completed-obs (rxclj/select-key todo :completed)
         title-obs (rxclj/select-key todo :title)]
+
     (rx/subscribe toggle-completed #(model/mark-completed todo %))
 
-    (rx/subscribe completed-obs
-                  (toggle-li-completed $todo))
+    (rx/subscribe completed-obs (toggle-li-completed $todo))
 
     (rx/subscribe destroy-click #(model/remove-todo todo))
     (rx/subscribe destroy-click #(j/remove $todo))
@@ -104,11 +106,19 @@
         j/show)
     (j/hide $clear-completed)))
 
+(defn update-all-completed [all-completed?]
+  (j/attr $toggle-all :checked  all-completed?))
+
 (def todo-input-entered (input-entered $new-todo))
 
 (def clear-completed-click
   (-> $clear-completed
       rxj/click))
+
+(def toggle-all-click
+  (-> $toggle-all
+      rxj/click
+      (rx/select #(boolean (j/attr $toggle-all :checked)))))
 
 (defn ^:export main []
   (rx/subscribe model/total-count toggle-main-and-footer)
@@ -116,6 +126,8 @@
   (rx/subscribe model/incomplete-count update-items-left)
   (rx/subscribe model/todo-added add-todos)
   (rx/subscribe model/todo-removed remove-todos)
+  (rx/subscribe model/all-completed update-all-completed)
 
   (rx/subscribe todo-input-entered new-todo)
-  (rx/subscribe clear-completed-click model/clear-completed))
+  (rx/subscribe clear-completed-click model/clear-completed)
+  (rx/subscribe toggle-all-click model/toggle-completed))

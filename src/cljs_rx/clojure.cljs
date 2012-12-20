@@ -180,6 +180,7 @@
   (-rseq [coll]
     (-rseq v)))
 
+
 (defn observable-vector [v]
   (ObservableVector. nil v (subject/behavior)))
 
@@ -233,10 +234,7 @@
                    (let [old (first buffer)
                          new (second buffer)]
                      [(vec (remove #(some #{%} old) new))
-                      (vec (remove #(some #{%} new) old))])))
-      (rx/where (fn [[added removed]]
-                  (not (and (empty? added)
-                            (empty? removed)))))))
+                      (vec (remove #(some #{%} new) old))])))))
 
 (defn added [obs]
   (-> obs

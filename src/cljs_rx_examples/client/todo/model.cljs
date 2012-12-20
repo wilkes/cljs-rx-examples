@@ -23,6 +23,10 @@
     (add! todos todo)
     todo))
 
+(defn toggle-completed [completed?]
+  (doseq [todo todos]
+    (mark-completed todo completed?)))
+
 (defn mark-completed [todo completed?]
   (obs-assoc! todo :completed completed?))
 
@@ -30,7 +34,7 @@
   (obs-assoc! todo :title title))
 
 (defn remove-todo [todo]
-  (update! todos #(vec (remove (partial = todo) %))))
+  (remove! todos todo))
 
 (defn clear-completed []
   (update! todos #(vec (remove :completed %))))
@@ -50,3 +54,8 @@
 (def change-obs (rxclj/changed (observable todos)))
 (def todo-added (rxclj/added change-obs))
 (def todo-removed (rxclj/removed change-obs))
+
+(def all-completed
+  (-> change-obs
+      (rx/select #(= (count todos)
+                     (count (filter :completed todos))))))
