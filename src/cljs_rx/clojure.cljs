@@ -227,10 +227,6 @@
 (defn select-key [obs k]
   (rx/select (observable obs) #(get % k)))
 
-(defn changed [obs]
-  (-> obs
-      rx/distinct-until-changed))
-
 (defn diff [obs]
   (-> obs
       (rx/buffer-with-count 2 1)

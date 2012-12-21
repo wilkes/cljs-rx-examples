@@ -57,6 +57,8 @@
 
 (def all-completed
   (-> todos observable
-      rxclj/changed
       (rx/select #(= (count todos)
-                     (count (filter :completed todos))))))
+                     (count (filter :completed todos))))
+      rx/distinct-until-changed))
+
+(rx/subscribe all-completed log)
