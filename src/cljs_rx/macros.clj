@@ -18,8 +18,8 @@
         args mandatory-args
         args (if optional
                (concat args '[&] (if (symbol? optional)
-                                   [var-args]
-                                   [[var-args]]))
+                                   var-args
+                                   [var-args]))
                args)
         obs (gensym "obs")]
 
