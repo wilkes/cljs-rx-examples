@@ -10,15 +10,18 @@
                             event-data#)))))
 
 
-(defmacro defwrap [name delegate & [mandatory-count optional-count]]
-  (let [mandatory-args (vec (map (fn [_] (gensym))
-                                 (range 0 (or mandatory-count 0))))
-        var-args (vec (map (fn [_] (gensym))
-                           (range 0 (or optional-count 0))))
+(defmacro defwrap [name delegate & [mandatory optional]]
+  (let [mandatory-args (vec (map gensym mandatory))
+        var-args (if (symbol? optional)
+                   [(gensym optional)]
+                   (vec (map gensym optional)))
         args mandatory-args
-        args (if optional-count
-               (concat args '[&] [var-args])
-               args)]
-    `(do
-       (defn ~name [obs# ~@args]
-         (~delegate obs# ~@mandatory-args ~@var-args)))))
+        args (if optional
+               (concat args '[&] (if (symbol? optional)
+                                   [var-args]
+                                   [[var-args]]))
+               args)
+        obs (gensym "obs")]
+
+    `(defn ~name [~obs ~@args]
+       (~delegate ~obs ~@mandatory-args ~@var-args))))
