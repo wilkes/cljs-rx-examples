@@ -1,43 +1,16 @@
 (ns cljs-rx.observable
-  (:refer-clojure :exclude [take merge]))
+  (:refer-clojure :exclude [take merge])
+  (:use-macros [cljs-rx.macros :only [defwrap]]))
 
-(defn select [obs f]
-  (.select obs f))
-
-(defn select-many [obs f]
-  (.selectMany obs f))
-
-(defn throttle [obs ms]
-  (.throttle obs ms))
-
-(defn distinct-until-changed [obs]
-  (.distinctUntilChanged obs))
-
-(defn where [obs f]
-  (.where obs f))
-
-(defn switch-latest [obs]
-  (.switchLatest obs))
-
-(defn subscribe
-  ([obs observer-or-on-next]
-     (.subscribe obs observer-or-on-next))
-  ([obs observer-or-on-next on-error]
-     (.subscribe obs observer-or-on-next on-error))
-  ([obs observer-or-on-next on-error on-completed]
-     (.subscribe obs observer-or-on-next on-error on-completed)))
-
-(defn delay [obs ms]
-  (.delay obs ms))
-
-(defn take-until [obs obs2]
-  (.takeUntil obs obs2))
-
-(defn buffer-with-count [obs x y]
-  (.bufferWithCount obs x y))
-
-(defn take [obs n]
-  (.take obs n))
-
-(defn merge [obs1 obs2]
-  (.merge obs1 obs2))
+(defwrap select .select 1)
+(defwrap select-many .selectMany 1)
+(defwrap throttle .throttle 1)
+(defwrap distinct-until-changed .distinctUntilChanged)
+(defwrap where .where 1)
+(defwrap switch-latest .switchLatest)
+(defwrap subscribe .subscribe 1 2)
+(defwrap delay .delay 1)
+(defwrap take-until .takeUntil 1)
+(defwrap buffer-with-count .bufferWithCount 2)
+(defwrap take .take 1)
+(defwrap merge .merge 1)
