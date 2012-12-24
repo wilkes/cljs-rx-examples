@@ -3,6 +3,7 @@
   :url "https://github.com/wilkes/cljs-rx-examples"
   :dependencies [[org.clojure/clojure "1.4.0"]
                  [compojure "1.1.3"]
+                 [hiccup "1.0.2"]
                  [jayq "1.0.0"]
                  [crate "0.2.3"]]
   :plugins [[lein-cljsbuild "0.2.9"]
