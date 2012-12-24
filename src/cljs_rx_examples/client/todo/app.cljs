@@ -2,6 +2,7 @@
   (:require [cljs-rx-examples.client.todo.model :as model]
             [cljs-rx.jquery :as rxj]
             [cljs-rx.observable :as rx]
+            [cljs-rx.history :refer [history-observable]]
             [cljs-rx.clojure :refer [observable] :as rxclj]
             [clojure.set :as set]
             [crate.core :as crate]
@@ -120,6 +121,23 @@
       rxj/click
       (rx/select #(boolean (j/attr $toggle-all :checked)))))
 
+(defn show-active []
+  (j/hide ($ "li.completed" $todo-list))
+  (j/show ($ "li[class!=completed]" $todo-list)))
+
+(defn show-completed []
+  (j/hide ($ "li[class!=completed]" $todo-list))
+  (j/show ($ "li.completed" $todo-list)))
+
+(defn show-all []
+  (j/show ($ "li" $todo-list)))
+
+(defn filter-list-view [{:keys [token]}]
+  (case token
+    "/active" (show-active)
+    "/completed" (show-completed)
+    (show-all)))
+
 (defn ^:export main []
   (rx/subscribe model/total-count toggle-main-and-footer)
   (rx/subscribe model/complete-count update-complete-count)
@@ -130,4 +148,5 @@
 
   (rx/subscribe todo-input-entered new-todo)
   (rx/subscribe clear-completed-click model/clear-completed)
-  (rx/subscribe toggle-all-click model/toggle-completed))
+  (rx/subscribe toggle-all-click model/toggle-completed)
+  (rx/subscribe history-observable filter-list-view))

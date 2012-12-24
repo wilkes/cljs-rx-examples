@@ -26,6 +26,18 @@
 		<footer id="footer">
 			<!-- This should be `0 items left` by default -->
 			<span id="todo-count"><strong>1</strong> item left</span>
+                        <ul id="filters">
+				<li>
+				  <a class="selected" href="#/">All</a>
+				</li>
+				<li>
+				  <a href="#/active">Active</a>
+				</li>
+				<li>
+				  <a href="#/completed">Completed</a>
+				</li>
+			</ul>
+
 			<button id="clear-completed">Clear completed (1)</button>
 		</footer>
 	</section>
@@ -44,7 +56,7 @@
         <script src="js/rx.time.js"></script>
         <script src="js/rx.binding.js"></script>
         <script src="js/rx.jquery.js"></script>
-        <script src="js/cljs/main.js"></script>
+        <script src="js/cljs/main-debug.js"></script>
         <script type="text/javascript">cljs_rx_examples.client.todo.app.main();</script>
 </body>
 </html>
