@@ -1,21 +1,14 @@
 (ns cljs-rx-examples.server
-  (:require [noir.server :as server]
-            [noir.core :refer [defpage]]
-            [noir.response :as response]
-            [cljs-rx-examples.pages :refer [layout]]))
+  (:require [cljs-rx-examples.pages :as pages]
+            [compojure.core :refer [defroutes GET]]
+            [compojure.handler :as handler]
+            [compojure.route :as route]
+            [ring.util.response :as response]))
 
-(defpage "/" []
-  (response/redirect "/ex/autocomplete/development"))
+(defroutes app-routes
+  (GET "/ex/:module/:mode" [module mode] (pages/layout mode module))
+  (GET "/" [] (response/redirect "/ex/autocomplete/development"))
+  (route/resources "/")
+  (route/not-found "Not Found"))
 
-(defpage "/ex/:module/:mode" {:keys [mode module]}
-  (layout mode module))
-
-(defn run-server [& [p]]
-  (let [port (Integer. (or p 8080))]
-    (server/start port {:mode :dev
-                        :ns 'cljs-rx-examples})))
-
-(comment
-  (do
-    (use 'cljs-rx-examples.server)
-    (run-server)))
+(def app (handler/site app-routes))

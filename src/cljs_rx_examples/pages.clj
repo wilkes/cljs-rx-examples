@@ -1,14 +1,11 @@
 (ns cljs-rx-examples.pages
-  (:use [hiccup.page :only [html5
+  (:require [hiccup.page :refer [html5
                             include-css
                             include-js]]
-        [hiccup.element :only [javascript-tag]]
-        [noir.core :only [defpartial]]
-        [noir.options :only [dev-mode?]])
-  (:require [noir.session :as session]
-            [noir.validation :as vali]))
+        [hiccup.element :refer [javascript-tag]]
+        [hiccup.def :refer [defhtml]]))
 
-(defpartial main-js [module js]
+(defhtml main-js [module js]
   (javascript-tag "var CLOSURE_NO_DEPS = true;")
   (include-js (str "/js/cljs/" js))
   (javascript-tag (str "cljs_rx_examples.client." module ".main();")))
@@ -28,17 +25,17 @@
                :dev "/index.html"
                :prod "/index.html"}])
 
-(defpartial module-link [m]
+(defhtml module-link [m]
   [:a {:href (:dev m)}  (:label m)])
 
-(defpartial make-nav [module]
+(defhtml make-nav [module]
   [:ul.nav
    (for [m modules]
      [:li {:class (if (= (:name m) module)
                     "active")}
       (module-link m)])])
 
-(defpartial mode-menu [mode module]
+(defhtml mode-menu [mode module]
   (let [dev?  (= mode "development")]
     [:ul.nav.pull-right
      [:li {:class (if-not dev? "active")}
@@ -50,7 +47,7 @@
            :class (if dev? "info")}
        "Development"]]]))
 
-(defpartial layout [mode module]
+(defhtml layout [mode module]
   (html5
    [:head
     [:title (str "RxJS Examples: " module)]

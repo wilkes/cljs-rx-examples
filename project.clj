@@ -1,15 +1,13 @@
 (defproject cljs-rx-examples "0.1.0-SNAPSHOT"
   :description "Messing around with RxJS and ClojureScript"
   :url "https://github.com/wilkes/cljs-rx-examples"
-  :dependencies [[clj-http "0.5.7"]
-                 [noir "1.3.0-beta10"]
+  :dependencies [[org.clojure/clojure "1.4.0"]
+                 [compojure "1.1.3"]
                  [jayq "1.0.0"]
-                 [fetch "0.1.0-alpha2"]
-                 [crate "0.2.3"]
-                 [org.clojure/clojure "1.4.0"]
-                 [clj-time "0.4.4"]
-                 [lib-noir "0.2.0-alpha2"]]
-  :plugins [[lein-cljsbuild "0.2.9"]]
+                 [crate "0.2.3"]]
+  :plugins [[lein-cljsbuild "0.2.9"]
+            [lein-ring "0.7.5"]]
+  :ring {:handler cljs-rx-examples.server/app}
   :cljsbuild {:builds
               {:debug {:source-path "src"
                        :compiler {:output-to "resources/public/js/cljs/main-debug.js"
