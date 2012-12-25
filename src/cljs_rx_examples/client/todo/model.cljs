@@ -1,10 +1,6 @@
 (ns cljs-rx-examples.client.todo.model
   (:require [cljs-rx.observable :as rx]
-            [cljs-rx.clojure :refer [add!
-                                     remove!
-                                     update!
-                                     obs-assoc!
-                                     observable] :as rxclj]
+            [cljs-rx.clojure :refer [observable] :as rxclj]
             [clojure.data :refer [diff]]
             [clojure.set :as set]
             [jayq.util :refer [log]]))
@@ -20,24 +16,24 @@
               {:id (swap! next-id inc)
                :title title
                :completed false})]
-    (add! todos todo)
+    (rxclj/add! todos todo)
     todo))
 
 (defn mark-completed [todo completed?]
-  (obs-assoc! todo :completed completed?))
+  (rxclj/obs-assoc! todo :completed completed?))
 
 (defn toggle-completed [completed?]
   (doseq [todo todos]
     (mark-completed todo completed?)))
 
 (defn edit-title [todo title]
-  (obs-assoc! todo :title title))
+  (rxclj/obs-assoc! todo :title title))
 
 (defn remove-todo [todo]
-  (remove! todos todo))
+  (rxclj/remove! todos todo))
 
 (defn clear-completed []
-  (update! todos #(vec (remove :completed %))))
+  (rxclj/update! todos #(vec (remove :completed %))))
 
 (def total-count
   (-> todos observable
@@ -60,5 +56,3 @@
       (rx/select #(= (count todos)
                      (count (filter :completed todos))))
       rx/distinct-until-changed))
-
-(rx/subscribe all-completed log)

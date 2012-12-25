@@ -246,3 +246,6 @@
   (-> obs
       (rx/select second)
       (rx/where (comp not empty?))))
+
+(defn bind-attr [target key f]
+  (rx/subscribe (select-key target key) f))
