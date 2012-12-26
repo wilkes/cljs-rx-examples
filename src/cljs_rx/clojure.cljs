@@ -5,14 +5,6 @@
             [clojure.set :as set]
             [jayq.util :refer [log]]))
 
-(defn observable-atom [atm]
-  (let [k (gensym)
-        subject (subject/behavior)]
-    (add-watch atm k
-               (fn [_ _ _ new-state]
-                 (.onNext subject new-state)))
-    subject))
-
 (defprotocol IBehavior
   (-remove [this x])
   (-replace [this x])
