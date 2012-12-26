@@ -1,4 +1,5 @@
-(ns cljs-rx.macros)
+(ns cljs-rx.macros
+  (:require [clojure.java.io :as io]))
 
 (defmacro defevent [event-name]
   (let [event-kw (keyword event-name)]
@@ -22,6 +23,7 @@
                                    [var-args]))
                args)
         obs (gensym "obs")]
-
+    #_(with-open [w (io/writer "rx.js" :append true)]
+      (.write w (str "Rx.Observable.prototype" delegate " = function() {};\n")))
     `(defn ~name [~obs ~@args]
        (~delegate ~obs ~@mandatory-args ~@var-args))))
