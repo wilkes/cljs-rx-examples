@@ -26,4 +26,6 @@
     #_(with-open [w (io/writer "rx.js" :append true)]
       (.write w (str "Rx.Observable.prototype" delegate " = function() {};\n")))
     `(defn ~name [~obs ~@args]
-       (~delegate ~obs ~@mandatory-args ~@var-args))))
+       (~delegate (cljs-rx.clojure/-to-observable ~obs)
+                  ~@mandatory-args
+                  ~@var-args))))

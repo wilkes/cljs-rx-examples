@@ -4,7 +4,7 @@
             [cljs-rx.dom :as rxdom]
             [cljs-rx.observable :as rx]
             [cljs-rx.history :refer [history-observable]]
-            [cljs-rx.clojure :refer [observable] :as rxclj]
+            [cljs-rx.clojure :as rxclj]
             [clojure.set :as set]
             [crate.core :as crate]
             [jayq.core :refer [$] :as j]
@@ -53,7 +53,7 @@
                        #(do (model/edit-title todo %)
                             (j/remove-class $todo "editing")))
 
-  (-> todo rxclj/subject (.onNext todo)))
+  (-> todo rxclj/to-subject (.onNext todo)))
 
 (defn add-todos [todos]
   (doseq [todo todos]

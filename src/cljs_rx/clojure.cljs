@@ -5,33 +5,43 @@
             [clojure.set :as set]
             [jayq.util :refer [log]]))
 
-(defprotocol IBehavior
-  (-remove [this x])
-  (-replace [this x])
-  (-observable [this])
-  (-subject [this]))
+(defprotocol IToObservable
+  (-to-observable [this]))
 
-(deftype ObservableMap [meta v behavior]
-  IBehavior
-  (-replace [this new-v]
-    (set! (.-v this) new-v)
-    (.onNext behavior new-v)
-    this)
+(defprotocol IToSubject
+  (-to-subject [this]))
 
+(defprotocol ISubjectCollection
+  (-remove [this x]))
+
+(deftype ObservableMap [state meta subject]
+  ISubjectCollection
   (-remove [this x]
-    (-replace this
-              (into {} (remove (partial = x) v))))
+    (reset! this
+            (into {} (remove (partial = x) state))))
 
-  (-observable [this]
-    (.asObservable behavior))
+  IToObservable
+  (-to-observable [this]
+    (.asObservable subject))
 
-  (-subject [this]
-    behavior)
+  IToSubject
+  (-to-subject [this]
+    subject)
+
+  IDeref
+  (-deref [_] state)
+
+  IWatchable
+  (-notify-watches [this oldval newval]
+    (.onNext subject newval))
+  (-add-watch [this key f]
+    (rx/subscribe subject f))
+  (-remove-watch [this key])
 
   IPrintWithWriter
   (-pr-writer [this writer opts]
     (-write writer "#<ObservableMap: ")
-    (-pr-writer v writer opts)
+    (-pr-writer state writer opts)
     (-write writer ">"))
 
   Object
@@ -48,30 +58,30 @@
 
   IEmptyableCollection
   (-empty [this]
-    (-replace this cljs.core.PersistentArrayMap/EMPTY))
+    (reset! this cljs.core.PersistentArrayMap/EMPTY))
 
   IEquiv
-  (-equiv [_ other] (equiv-map v (.-v other)))
+  (-equiv [_ other] (equiv-map state (.-state other)))
 
   IHash
-  (-hash [this] (-hash v))
+  (-hash [this] (-hash state))
 
   ISeqable
-  (-seq [_] (-seq v))
+  (-seq [_] (-seq state))
 
   ICounted
-  (-count [_] (-count v))
+  (-count [_] (-count state))
 
   ILookup
   (-lookup [coll k]
     (-lookup coll k nil))
 
   (-lookup [_ k not-found]
-    (-lookup v k not-found))
+    (-lookup state k not-found))
 
   IKVReduce
   (-kv-reduce [_ f init]
-    (-kv-reduce v f init))
+    (-kv-reduce state f init))
 
   IFn
   (-invoke [coll k]
@@ -80,30 +90,35 @@
   (-invoke [coll k not-found]
     (-lookup coll k not-found)))
 
-(defn observable-map [m]
-  (ObservableMap. nil m (subject/behavior)))
-
-(deftype ObservableVector [meta v behavior]
-  IBehavior
-  (-replace [this new-v]
-    (set! (.-v this) new-v)
-    (.onNext behavior new-v)
-    this)
-
+(deftype ObservableVector [state meta subject]
+  ISubjectCollection
   (-remove [this x]
-    (-replace this
-              (into [] (remove (partial = x) v))))
+    (reset! this
+              (into [] (remove (partial = x) state))))
 
-  (-observable [this]
-    (.asObservable behavior))
+  IToObservable
+  (-to-observable [this]
+    (.asObservable subject))
 
-  (-subject [this]
-    behavior)
+  IToSubject
+  (-to-subject [this]
+    subject)
+
+  IDeref
+  (-deref [_] state)
+
+  IWatchable
+  (-notify-watches [this oldval newval]
+    (.onNext subject newval))
+  (-add-watch [this key f]
+    (rx/subscribe subject f))
+  (-remove-watch [this key])
+
 
   IPrintWithWriter
   (-pr-writer [this writer opts]
     (-write writer "#<ObservableVector: ")
-    (-pr-writer v writer opts)
+    (-pr-writer state writer opts)
     (-write writer ">"))
 
   Object
@@ -120,27 +135,27 @@
 
   IEmptyableCollection
   (-empty [this]
-    (-replace this cljs.core.PersistentVector/EMPTY))
+    (reset! this cljs.core.PersistentVector/EMPTY))
 
   ISequential
   IEquiv
-  (-equiv [_ other] (equiv-sequential v (.-v other)))
+  (-equiv [_ other] (equiv-sequential state (.-state other)))
 
   IHash
-  (-hash [this] v)
+  (-hash [this] (hash state))
 
   ISeqable
   (-seq [_]
-    (-seq v))
+    (-seq state))
 
   ICounted
-  (-count [_] (-count v))
+  (-count [_] (-count state))
 
   IIndexed
   (-nth [_ n]
-    (-nth v n))
+    (-nth state n))
   (-nth [_ n not-found]
-    (-nth v n not-found))
+    (-nth state n not-found))
 
   ILookup
   (-lookup [coll k] (-nth coll k nil))
@@ -154,13 +169,13 @@
 
   IReduce
   (-reduce [_ f]
-    (-reduce v f))
+    (-reduce state f))
   (-reduce [_ f start]
-    (-reduce v f start))
+    (-reduce state f start))
 
   IKVReduce
   (-kv-reduce [_ f init]
-    (-kv-reduce v f init))
+    (-kv-reduce state f init))
 
   IFn
   (-invoke [coll k]
@@ -170,54 +185,52 @@
 
   IReversible
   (-rseq [coll]
-    (-rseq v)))
+    (-rseq state)))
 
+(extend-protocol IToObservable
+  js/Rx.Observable
+  (-to-observable [x]
+    (.asObservable x)))
+
+(defn observable-map [m]
+  (ObservableMap. m nil (subject/behavior)))
 
 (defn observable-vector [v]
-  (ObservableVector. nil v (subject/behavior)))
+  (ObservableVector. v nil (subject/behavior)))
 
-(defn observable [obs]
-  (-observable obs))
+(defn to-observable [obs]
+  (-to-observable obs))
 
-(defn subject [obs]
-  (-subject obs))
+(defn to-subject [obs]
+  (-to-subject obs))
 
 (defn- subscribe-parent [parent child]
-  (if (and (satisfies? IBehavior parent)
-           (satisfies? IBehavior child))
-    (rx/subscribe (observable child)
+  (if (and (satisfies? IToSubject parent)
+           (satisfies? IToObservable child))
+    (rx/subscribe child
                   (fn [x]
-                    (.onNext (subject parent) (.-v parent)))))
+                    (.onNext (to-subject parent) @parent))))
   parent)
 
-(defn update!
-  ([obs f]
-     (-replace obs (f (.-v obs))))
-  ([obs f x]
-     (-replace obs (f (.-v obs) x)))
-  ([obs f x y]
-     (-replace obs (f (.-v obs) x y)))
-  ([obs f x y z]
-     (-replace obs (f (.-v obs) x y z)))
-  ([obs f x y z & more]
-     (-replace obs (apply f (.-v obs) x y z more))))
-
 (defn add! [obs x]
-  (update! obs conj x)
+  (swap! obs conj x)
   (subscribe-parent obs x))
 
 (defn remove! [obs x]
   (-remove obs x))
 
 (defn obs-assoc! [obs k v]
-  (update! obs assoc k v)
+  (swap! obs assoc k v)
   (subscribe-parent obs v))
 
 (defn obs-dissoc! [obs k]
-  (update! obs dissoc k))
+  (swap! obs dissoc k))
 
 (defn select-key [obs k]
-  (rx/select (observable obs) #(get % k)))
+  (rx/select obs #(get % k)))
+
+(defn bind-attr [target key f]
+  (rx/subscribe (select-key target key) f))
 
 (defn diff [obs]
   (-> obs
@@ -238,6 +251,3 @@
   (-> obs
       (rx/select second)
       (rx/where (comp not empty?))))
-
-(defn bind-attr [target key f]
-  (rx/subscribe (select-key target key) f))

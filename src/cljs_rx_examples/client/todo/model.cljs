@@ -1,6 +1,6 @@
 (ns cljs-rx-examples.client.todo.model
   (:require [cljs-rx.observable :as rx]
-            [cljs-rx.clojure :refer [observable] :as rxclj]
+            [cljs-rx.clojure :as rxclj]
             [clojure.data :refer [diff]]
             [clojure.set :as set]
             [jayq.util :refer [log]]))
@@ -33,26 +33,26 @@
   (rxclj/remove! todos todo))
 
 (defn clear-completed []
-  (rxclj/update! todos #(vec (remove :completed %))))
+  (swap! todos #(vec (remove :completed %))))
 
 (def total-count
-  (-> todos observable
+  (-> todos
       (rx/select count)))
 
 (def incomplete-count
-  (-> todos observable
+  (-> todos
       (rx/select #(count (remove :completed %)))))
 
 (def complete-count
-  (-> todos observable
+  (-> todos
       (rx/select #(count (filter :completed %)))))
 
-(def change-obs (rxclj/diff (observable todos)))
+(def change-obs (rxclj/diff todos))
 (def todo-added (rxclj/added change-obs))
 (def todo-removed (rxclj/removed change-obs))
 
 (def all-completed
-  (-> todos observable
+  (-> todos
       (rx/select #(= (count todos)
                      (count (filter :completed todos))))
       rx/distinct-until-changed))
